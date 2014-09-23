@@ -34,7 +34,9 @@ def pymain(stdscr):
     # R load 0 into *ptr
     # & load 'a' into *ptr
     # x output *ptr to x coordinate
+    # X output accumulator to x coordinate
     # y output *ptr to y coordinate
+    # Y output accumulator to y coordinate
     # c clear screen
     # a output *ptr to accumulator
     # A output 0 to accumulator
@@ -120,6 +122,10 @@ def pymain(stdscr):
                 x = vars[ptr]
             elif currchar == 'y':
                 y = vars[ptr]
+            elif currchar == 'X':
+                x = acc
+            elif currchar == 'Y':
+                y = acc
             elif currchar == 'c':
                 stdscr.clear()
             elif currchar == 'a':
@@ -177,7 +183,7 @@ def pymain(stdscr):
             elif currchar == '>':
                 datastack.append(acc)
             elif currchar == '<':
-                if len(datastack) == 0:
+                if len(datastack) != 0:
                     acc = datastack.pop()
 
             pos += 1
