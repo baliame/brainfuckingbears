@@ -7,7 +7,7 @@ Created for the 43rd Schönherz Cup by Ákos Tóth and other contributors.
 
 <strong>Usage:</strong>
 ```bash
-python3 metalang.py FILE [debug|slow|veryslow]
+python3 bfb.py FILE [debug|slow|veryslow]
 ```
 
 Like our Facebook page:
