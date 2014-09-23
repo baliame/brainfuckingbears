@@ -140,7 +140,7 @@ def pymain(stdscr):
                 acc = stdscr.getch()
                 lastread = acc
             elif currchar == '.':
-                stdscr.addch(y, x, chr(acc))
+                stdscr.addch(x, y, chr(acc))
             elif currchar == 'Z':
                 ptr = vars[ptr]
             elif currchar == 'z':
