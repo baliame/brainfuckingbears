@@ -52,6 +52,8 @@ def pymain(stdscr):
     # 0 to 9 subroutine id
     # { begin subroutine definition
     # } end subroutine definition
+    # > push accumulator onto stack
+    # < pop accumulator from stack
     # @ delay by 10ms
 
     inp = ""
@@ -72,6 +74,8 @@ def pymain(stdscr):
     csubr = 0
     stack = []
     loops = []
+
+    datastack = []
 
     lastread = 0
 
@@ -169,15 +173,34 @@ def pymain(stdscr):
                     prog_ended = True
             elif currchar == '@':
                 time.sleep(0.01)
+            elif currchar == '>':
+                datastack.append(acc)
+            elif currchar == '<':
+                if len(datastack) == 0:
+                    acc = datastack.pop()
+
             pos += 1
             stdscr.refresh()
             if debug:
-                stdscr.addstr(22, 0, "                                        ")
-                stdscr.addstr(23, 0, "                                                  ")
+                # A: accumulator
+                # L: last input from ?
+                # X: X coordinate
+                # Y: Y coordinate
+                # P: mempointer
+                # V: memvalue
+                # >: program counter
+                # C: last instruction
+                # N: next instruction
+                # S: stack size (stack pointer)
+                # T: stack top
+
+                stdscr.addstr(22, 0, "                                                            ")
+                stdscr.addstr(23, 0, "                                                            ")
                 stdscr.addstr(22, 0, "A {0}".format(acc))
                 stdscr.addstr(22, 10, "L {0}".format(lastread))
                 stdscr.addstr(22, 20, "X {0}".format(x))
                 stdscr.addstr(22, 30, "> {0}".format(pos))
+                stdscr.addstr(22, 50, "S {0}".format(len(datastack)))
                 stdscr.addstr(23, 0, "P {0}".format(ptr))
                 stdscr.addstr(23, 10, "V {0}".format(vars[ptr]))
                 stdscr.addstr(23, 20, "Y {0}".format(y))
@@ -186,12 +209,16 @@ def pymain(stdscr):
                     stdscr.addstr(23, 40, "N {0}".format(inp[pos]))
                 else:
                     stdscr.addstr(23, 40, "END".format(inp[pos]))
+                if len(datastack):
+                    stdscr.addstr(23, 50, "T {0}".format(datastack[len(datastack) - 1]))
+                else:
+                    stdscr.addstr(23, 50, "T ---")
 
                 if debug == 1:
                     stdscr.nodelay(0)
                     stdscr.getch()
                     stdscr.nodelay(1)
-                    time.sleep(0.1)
+                    time.sleep(0.3)
                 elif debug == 2:
                     time.sleep(0.1)
                 elif debug == 3:
