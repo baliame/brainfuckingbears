@@ -57,7 +57,11 @@ def pymain(stdscr):
     # } end subroutine definition
     # > push accumulator onto stack
     # < pop accumulator from stack
+    # ) push program counter onto stack
+    # ( pop program counter from stack
     # @ delay by 10ms
+    # any other character is an instruction which is automatically skipped
+    # do not use any invalid instructions after q or Q.
 
     inp = ""
     try:
@@ -185,6 +189,11 @@ def pymain(stdscr):
             elif currchar == '<':
                 if len(datastack) != 0:
                     acc = datastack.pop()
+            elif currchar == ')':
+                datastack.append(pos)
+            elif currchar == '(':
+                if len(datastack) != 0:
+                    pos = datastack.pop()
 
             pos += 1
             stdscr.refresh()
