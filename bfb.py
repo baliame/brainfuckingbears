@@ -60,6 +60,7 @@ def pymain(stdscr):
     # ) push program counter onto stack
     # ( pop program counter from stack
     # @ delay by 10ms
+    # # ignore everything until the next newline
     # any other character is an instruction which is automatically skipped
     # do not use any invalid instructions after q or Q.
 
@@ -194,6 +195,10 @@ def pymain(stdscr):
             elif currchar == '(':
                 if len(datastack) != 0:
                     pos = datastack.pop()
+            elif currchar == '#':
+                while pos < len(inp) and inp[pos] != "\n":
+                    pos += 1
+
 
             pos += 1
             stdscr.refresh()
