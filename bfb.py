@@ -4,6 +4,7 @@ __author__ = 'Ákos Tóth'
 import curses
 import sys
 import time
+import random
 
 if len(sys.argv) < 2 or len(sys.argv) > 3:
     print('Usage: ' + sys.argv[0] + ' <code file>')
@@ -18,6 +19,8 @@ if len(sys.argv) == 3:
         debug = 3
 
 def pymain(stdscr):
+    rand = random.Random()
+    rand.seed()
     curses.curs_set(0)
     stdscr.nodelay(1)
 
@@ -42,6 +45,9 @@ def pymain(stdscr):
     # A output 0 to accumulator
     # + add *ptr to accumulator
     # * multiply *ptr to accumulator
+    # % modulo accumulator by *ptr
+    # / divide accumulator by *ptr (flooring)
+    # - subtract *ptr from accumulator
     # ? read key into accumulator
     # . output ascii(accumulator) to screen location
     # Z load *ptr to ptr
@@ -61,6 +67,7 @@ def pymain(stdscr):
     # ( pop program counter from stack
     # @ delay by 10ms
     # # ignore everything until the next newline
+    # ! generate random number into accumulator
     # any other character is an instruction which is automatically skipped
     # do not use any invalid instructions after q or Q.
 
@@ -141,6 +148,14 @@ def pymain(stdscr):
                 acc += vars[ptr]
             elif currchar == '*':
                 acc *= vars[ptr]
+            elif currchar == '/':
+                if vars[ptr] == 0:
+                    raise ValueError('Division by zero.')
+                acc //= vars[ptr]
+            elif currchar == '-':
+                acc -= vars[ptr]
+            elif currchar == '%':
+                acc %= vars[ptr]
             elif currchar == '?':
                 acc = stdscr.getch()
                 lastread = acc
@@ -190,15 +205,20 @@ def pymain(stdscr):
             elif currchar == '<':
                 if len(datastack) != 0:
                     acc = datastack.pop()
+                else:
+                    raise IndexError('Stack is empty.')
             elif currchar == ')':
                 datastack.append(pos)
             elif currchar == '(':
                 if len(datastack) != 0:
                     pos = datastack.pop()
+                else:
+                    raise IndexError('Stack is empty.')
             elif currchar == '#':
                 while pos < len(inp) and inp[pos] != "\n":
                     pos += 1
-
+            elif currchar == '!':
+                acc = rand.randint(0, 65535)
 
             pos += 1
             stdscr.refresh()
