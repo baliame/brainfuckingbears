@@ -1,4 +1,5 @@
-__author__ = 'marquesas'
+#!/usr/bin/python3
+__author__ = 'Ákos Tóth'
 
 import curses
 import sys
