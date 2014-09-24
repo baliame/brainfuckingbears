@@ -1,6 +1,26 @@
 #subroutines
 #0
-{}
+{
+# push ptr
+;
+# push a
+>
+# push swap
+W>
+# set initial write destinations into x,y and into stack as y x
+rnnZyxa>>
+# leave 10 in here for comparison
+RM
+# jump to screen state
+rnZ
+# start print loop
+[
+# load and output current character
+a.
+# reload x, increment, compare
+<;rnnZIQ{,<;rnnZIQ{,<w<,^$}Y,>;rnnZnRa,;$},X>
+]
+}
 #1
 {}
 #2
@@ -71,3 +91,17 @@ rnnZnnnZn<z
 rnnZnnnmnR
 # increment loop counter, check stuff, break if at limit
 rnnZ<ITb]
+# set sandbox,0 to 100
+rnnZR MMMMM MMMMM
+# create code for 'x', save to swap, jump to screen state area
+ra>&RMMMmmm+w<znZ
+# set up for loop: counter to accumulator
+Ra
+# loop: fill mem with 'x'
+[VI;rnnZQ{db}]
+# main loop
+[
+# initial redraw
+0
+# end main loop
+@]

@@ -74,6 +74,7 @@ def pymain(stdscr):
     # { begin subroutine definition
     # ^ return from subroutine
     # } end subroutine definition
+    # $ skip next instruction
 
     # [ begin loop
     # ] return to loop beginning
@@ -192,6 +193,7 @@ def pymain(stdscr):
             elif currchar == ']':
                 pos = loops[len(loops) - 1]
             elif currchar == 'b':
+                pos += 1
                 depth = 1
                 while pos < len(inp) and depth > 0:
                     if inp[pos] == ']':
@@ -233,6 +235,8 @@ def pymain(stdscr):
             elif currchar == 'U':
                 if 0 == acc:
                     pos += 1
+            elif currchar == '$':
+                pos += 1
             elif currchar == 'v':
                 swap = vars[ptr]
             elif currchar == 'V':
@@ -249,6 +253,7 @@ def pymain(stdscr):
                 if csubr < 10:
                     subrpos[csubr] = pos
                     csubr += 1
+                pos += 1
                 depth = 1
                 while pos < len(inp) and depth > 0:
                     if inp[pos] == '}':
@@ -337,7 +342,7 @@ def pymain(stdscr):
                 if pos < len(inp):
                     stdscr.addstr(23, 40, "N {0}".format(inp[pos]))
                 else:
-                    stdscr.addstr(23, 40, "END".format(inp[pos]))
+                    stdscr.addstr(23, 40, "END")
                 if len(datastack):
                     stdscr.addstr(23, 50, "T {0}".format(datastack[len(datastack) - 1]))
                 else:
