@@ -1,0 +1,73 @@
+#subroutines
+#0
+{}
+#1
+{}
+#2
+{}
+#3
+{}
+#4
+{}
+#5
+{}
+#6
+{}
+#7
+{}
+#8
+{}
+#9
+{}
+#memory pattern: 0-9 memory sections which contain quick jumps to the appropriate section
+#section 0 (addr 0) mines, len 10, addr 10
+rRMn
+#section 1 (addr 1) uncovered fields, len 100, addr 20
+RMMn
+#section 2 (addr 2) sandbox, len 200, addr 120
+R MMMMM MMMMM MMn
+#generate field of 10x10, 10 mines
+# jump to sandbox
+rnnZ
+# load iteration count 10 to sandbox+0
+RMn
+# load modulo 100 to sandbox+1
+RMMMMMMMMMMn
+# mines address sandbox+2
+RMn
+# last mine set sandbox+3
+RMpn
+# success flag sandbox+4
+Rn
+# set iteration counter to 0
+Ra
+# reset address to sandbox start
+ppppp
+# minefield generation loop
+[>
+# generate random number between 0 and 99 inclusive (field ID of next mine)
+!%
+# load memory barrier into swap
+nnv
+# jump to last mine placed
+nZ
+# verify loop
+[
+# save the mine field to stack and load ptr to accumulator
+>;<
+# set comparison mode to swap do not set success flag if not all mines have been compared
+|\[Tb;rnnZnnnnRm,db]Tb|
+# reload mine field from stack, break if mine equals generated number
+<qb
+# go to next mine, restart loop
+p]|
+# save accumulator, navigate to success flag
+rnnZnnnn>
+# if success flag is 0, continue
+aU{<<B}
+# save mine field to appropriate address
+rnnZnnnZn<z
+# increment address and reset success flag
+rnnZnnnmnR
+# increment loop counter, check stuff, break if at limit
+rnnZ<ITb]

@@ -25,49 +25,69 @@ def pymain(stdscr):
     stdscr.nodelay(1)
 
     # Character set:
+    # 0 to 9 subroutine id
+    # a output *ptr to accumulator
+    # A output 0 to accumulator
+    # b break current loop unconditionally
+    # B continue current loop
+    # c clear screen
+    # d dump the top of the stack
+    # D decrease accumulator
+    # I increase accumulator
+    # l decrease *ptr by 1
+    # L decrease *ptr by 10
+    # m increase *ptr by 1
+    # M increase *ptr by 10
     # n increase ptr by 1
     # N increase ptr by 10
     # p decrease ptr by 1
     # P decrease ptr by 10
-    # m increase *ptr by 1
-    # M increase *ptr by 10
-    # l decrease *ptr by 1
-    # L decrease *ptr by 10
+    # q skip next instruction if accumulator does not equal *ptr (CMP = 0) or swap (CMP = 1)
+    # Q skip next instruction if accumulator equals *ptr (CMP = 0) or swap (CMP = 1)
     # r load 0 into ptr
     # R load 0 into *ptr
-    # & load 'a' into *ptr
+    # s skip next instruction if accumulator is not less than *ptr (CMP = 0) or swap (CMP = 1)
+    # S skip next instruction if accumulator is less than *ptr (CMP = 0) or swap (CMP = 1)
+    # t skip next instruction if accumulator is not greater than *ptr (CMP = 0) or swap (CMP = 1)
+    # T skip next instruction if accumulator is greater than *ptr (CMP = 0) or swap (CMP = 1)
+    # u skip next instruction if accumulator is not zero (regardless of CMP)
+    # U skip next instruction if accumulator is zero (regardless of CMP)
+    # v save *ptr to swap
+    # V load *ptr from swap
+    # w save accumulator to swap
+    # W load accumulator from swap
     # x output *ptr to x coordinate
     # X output accumulator to x coordinate
     # y output *ptr to y coordinate
     # Y output accumulator to y coordinate
-    # c clear screen
-    # a output *ptr to accumulator
-    # A output 0 to accumulator
+    # z load accumulator to *ptr
+    # Z load *ptr to ptr
+    # & load 'a' into *ptr
     # + add *ptr to accumulator
-    # * multiply *ptr to accumulator
-    # % modulo accumulator by *ptr
-    # / divide accumulator by *ptr (flooring)
     # - subtract *ptr from accumulator
+    # * multiply *ptr to accumulator
+    # / divide accumulator by *ptr (flooring)
+    # % modulo accumulator by *ptr
     # ? read key into accumulator
     # . output ascii(accumulator) to screen location
-    # Z load *ptr to ptr
-    # z load accumulator to *ptr
+
+    # { begin subroutine definition
+    # ^ return from subroutine
+    # } end subroutine definition
+
     # [ begin loop
     # ] return to loop beginning
-    # b break current loop unconditionally
-    # ^ return from subroutine
-    # q skip next instruction if accumulator does not equal *ptr
-    # Q skip next instruction if accumulator equals *ptr
-    # 0 to 9 subroutine id
-    # { begin subroutine definition
-    # } end subroutine definition
     # > push accumulator onto stack
     # < pop accumulator from stack
     # ) push program counter onto stack
     # ( pop program counter from stack
+    # ; push ptr onto stack
+    # , pop ptr from stack
     # @ delay by 10ms
-    # # ignore everything until the next newline
+    # # ignore everything until the next newline - - - - do not use ] and } characters in comments
     # ! generate random number into accumulator
+    # \ complement CMP flag (if set, compare with swap instead of *ptr)
+    # | unset CMP flag
     # any other character is an instruction which is automatically skipped
     # do not use any invalid instructions after q or Q.
 
@@ -85,6 +105,8 @@ def pymain(stdscr):
     acc = 0
     x = 0
     y = 0
+    swap = 0
+    CMP = 0
     subrpos = [0] * 10
     csubr = 0
     stack = []
@@ -170,34 +192,73 @@ def pymain(stdscr):
             elif currchar == ']':
                 pos = loops[len(loops) - 1]
             elif currchar == 'b':
-                while pos < len(inp) and inp[pos] != ']':
+                depth = 1
+                while pos < len(inp) and depth > 0:
+                    if inp[pos] == ']':
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    elif inp[pos] == '[':
+                        depth += 1
                     pos += 1
                 loops.pop()
+            elif currchar == 'B':
+                pos = loops[len(loops) - 1]
             elif currchar == '^':
                 if len(stack):
                     pos = stack.pop()
                 else:
                     prog_ended = True
+            elif currchar == 's':
+                if (not CMP and vars[ptr] >= acc) or (CMP and swap >= acc):
+                    pos += 1
+            elif currchar == 'S':
+                if (not CMP and vars[ptr] < acc) or (CMP and swap < acc):
+                    pos += 1
+            elif currchar == 't':
+                if (not CMP and vars[ptr] <= acc) or (CMP and swap <= acc):
+                    pos += 1
+            elif currchar == 'T':
+                if (not CMP and vars[ptr] > acc) or (CMP and swap > acc):
+                    pos += 1
             elif currchar == 'q':
-                if vars[ptr] != acc:
+                if (not CMP and vars[ptr] != acc) or (CMP and swap != acc):
                     pos += 1
             elif currchar == 'Q':
-                if vars[ptr] == acc:
+                if (not CMP and vars[ptr] == acc) or (CMP and swap == acc):
                     pos += 1
+            elif currchar == 'u':
+                if 0 != acc:
+                    pos += 1
+            elif currchar == 'U':
+                if 0 == acc:
+                    pos += 1
+            elif currchar == 'v':
+                swap = vars[ptr]
+            elif currchar == 'V':
+                vars[ptr] = swap
+            elif currchar == 'w':
+                swap = acc
+            elif currchar == 'W':
+                acc = swap
             elif currchar in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
                 id = ord(currchar) - ord('0')
                 stack.append(pos)
                 pos = subrpos[id]
             elif currchar == '{':
-                subrpos[csubr] = pos
-                csubr += 1
-                while pos < len(inp) and inp[pos] != '}':
+                if csubr < 10:
+                    subrpos[csubr] = pos
+                    csubr += 1
+                depth = 1
+                while pos < len(inp) and depth > 0:
+                    if inp[pos] == '}':
+                        depth -= 1
+                    elif inp[pos] == '{':
+                        depth += 1
                     pos += 1
             elif currchar == '}':
                 if len(stack):
                     pos = stack.pop()
-                else:
-                    prog_ended = True
             elif currchar == '@':
                 time.sleep(0.01)
             elif currchar == '>':
@@ -214,11 +275,34 @@ def pymain(stdscr):
                     pos = datastack.pop()
                 else:
                     raise IndexError('Stack is empty.')
+            elif currchar == ';':
+                datastack.append(ptr)
+            elif currchar == ',':
+                if len(datastack) != 0:
+                    ptr = datastack.pop()
+                else:
+                    raise IndexError('Stack is empty.')
             elif currchar == '#':
                 while pos < len(inp) and inp[pos] != "\n":
                     pos += 1
             elif currchar == '!':
                 acc = rand.randint(0, 65535)
+            elif currchar == '\\':
+                if CMP:
+                    CMP = False
+                else:
+                    CMP = True
+            elif currchar == '|':
+                CMP = False
+            elif currchar == 'd':
+                if len(datastack) != 0:
+                    datastack.pop()
+                else:
+                    raise IndexError('Stack is empty.')
+            elif currchar == 'D':
+                acc -= 1
+            elif currchar == 'I':
+                acc += 1
 
             pos += 1
             stdscr.refresh()
@@ -234,14 +318,18 @@ def pymain(stdscr):
                 # N: next instruction
                 # S: stack size (stack pointer)
                 # T: stack top
+                # W: swap
+                # CMP: CMP flag
 
-                stdscr.addstr(22, 0, "                                                            ")
+                stdscr.addstr(22, 0, "                                                                      ")
                 stdscr.addstr(23, 0, "                                                            ")
                 stdscr.addstr(22, 0, "A {0}".format(acc))
                 stdscr.addstr(22, 10, "L {0}".format(lastread))
                 stdscr.addstr(22, 20, "X {0}".format(x))
                 stdscr.addstr(22, 30, "> {0}".format(pos))
+                stdscr.addstr(22, 40, "W {0}".format(swap))
                 stdscr.addstr(22, 50, "S {0}".format(len(datastack)))
+                stdscr.addstr(22, 60, "CMP {0}".format(CMP))
                 stdscr.addstr(23, 0, "P {0}".format(ptr))
                 stdscr.addstr(23, 10, "V {0}".format(vars[ptr]))
                 stdscr.addstr(23, 20, "Y {0}".format(y))
