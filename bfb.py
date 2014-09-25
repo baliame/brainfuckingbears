@@ -10,6 +10,7 @@ if len(sys.argv) < 2 or len(sys.argv) > 3:
     print('Usage: ' + sys.argv[0] + ' <code file>')
     exit(1)
 debug = 0
+bp = -1
 if len(sys.argv) == 3:
     if sys.argv[2] == 'debug':
         debug = 1
@@ -17,8 +18,13 @@ if len(sys.argv) == 3:
         debug = 2
     elif sys.argv[2] == 'veryslow':
         debug = 3
+    else:
+        bp = int(sys.argv[2])
 
 def pymain(stdscr):
+    global debug
+    global bp
+    dbgkey = 0
     rand = random.Random()
     rand.seed()
     curses.curs_set(0)
@@ -33,6 +39,9 @@ def pymain(stdscr):
     # c clear screen
     # d dump the top of the stack
     # D decrease accumulator
+    # e push accumulator onto DEBUG STACK
+    # E clear DEBUG STACK
+    # i interrupt (exit) with exit code in accumulator
     # I increase accumulator
     # l decrease *ptr by 1
     # L decrease *ptr by 10
@@ -114,6 +123,8 @@ def pymain(stdscr):
     loops = []
 
     datastack = []
+    debugstack = []
+    subrloops = []
 
     lastread = 0
 
@@ -189,6 +200,10 @@ def pymain(stdscr):
             elif currchar == 'z':
                 vars[ptr] = acc
             elif currchar == '[':
+                if len(stack):
+                    srl = subrloops.pop()
+                    srl += 1
+                    subrloops.append(srl)
                 loops.append(pos)
             elif currchar == ']':
                 pos = loops[len(loops) - 1]
@@ -203,25 +218,35 @@ def pymain(stdscr):
                     elif inp[pos] == '[':
                         depth += 1
                     pos += 1
+                if len(stack):
+                    srl = subrloops.pop()
+                    if srl > 0:
+                        srl -= 1
+                    else:
+                        srl = 0
+                    subrloops.append(srl)
                 loops.pop()
             elif currchar == 'B':
                 pos = loops[len(loops) - 1]
             elif currchar == '^':
                 if len(stack):
                     pos = stack.pop()
+                    srl = subrloops.pop()
+                    for i in range(srl):
+                        loops.pop()
                 else:
                     prog_ended = True
             elif currchar == 's':
-                if (not CMP and vars[ptr] >= acc) or (CMP and swap >= acc):
-                    pos += 1
-            elif currchar == 'S':
-                if (not CMP and vars[ptr] < acc) or (CMP and swap < acc):
-                    pos += 1
-            elif currchar == 't':
                 if (not CMP and vars[ptr] <= acc) or (CMP and swap <= acc):
                     pos += 1
-            elif currchar == 'T':
+            elif currchar == 'S':
                 if (not CMP and vars[ptr] > acc) or (CMP and swap > acc):
+                    pos += 1
+            elif currchar == 't':
+                if (not CMP and vars[ptr] >= acc) or (CMP and swap >= acc):
+                    pos += 1
+            elif currchar == 'T':
+                if (not CMP and vars[ptr] < acc) or (CMP and swap < acc):
                     pos += 1
             elif currchar == 'q':
                 if (not CMP and vars[ptr] != acc) or (CMP and swap != acc):
@@ -248,6 +273,7 @@ def pymain(stdscr):
             elif currchar in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
                 id = ord(currchar) - ord('0')
                 stack.append(pos)
+                subrloops.append(0)
                 pos = subrpos[id]
             elif currchar == '{':
                 if csubr < 10:
@@ -258,12 +284,17 @@ def pymain(stdscr):
                 while pos < len(inp) and depth > 0:
                     if inp[pos] == '}':
                         depth -= 1
+                        if depth == 0:
+                            break
                     elif inp[pos] == '{':
                         depth += 1
                     pos += 1
             elif currchar == '}':
                 if len(stack):
                     pos = stack.pop()
+                    srl = subrloops.pop()
+                    for i in range(srl):
+                        loops.pop()
             elif currchar == '@':
                 time.sleep(0.01)
             elif currchar == '>':
@@ -308,9 +339,17 @@ def pymain(stdscr):
                 acc -= 1
             elif currchar == 'I':
                 acc += 1
+            elif currchar == 'e':
+                debugstack.append(acc)
+            elif currchar == 'E':
+                debugstack.clear()
+            elif currchar == 'i':
+                exit(acc)
 
             pos += 1
             stdscr.refresh()
+            if pos == bp and bp >= 0:
+                debug = 1
             if debug:
                 # A: accumulator
                 # L: last input from ?
@@ -325,16 +364,18 @@ def pymain(stdscr):
                 # T: stack top
                 # W: swap
                 # CMP: CMP flag
-
-                stdscr.addstr(22, 0, "                                                                      ")
-                stdscr.addstr(23, 0, "                                                            ")
+                stdscr.addstr(22, 0, "                                                                               ")
+                stdscr.addstr(23, 0, "                                                                               ")
                 stdscr.addstr(22, 0, "A {0}".format(acc))
                 stdscr.addstr(22, 10, "L {0}".format(lastread))
                 stdscr.addstr(22, 20, "X {0}".format(x))
                 stdscr.addstr(22, 30, "> {0}".format(pos))
                 stdscr.addstr(22, 40, "W {0}".format(swap))
                 stdscr.addstr(22, 50, "S {0}".format(len(datastack)))
-                stdscr.addstr(22, 60, "CMP {0}".format(CMP))
+                val = 0
+                if CMP:
+                    val = 1
+                stdscr.addstr(22, 60, "CMP {0}".format(val))
                 stdscr.addstr(23, 0, "P {0}".format(ptr))
                 stdscr.addstr(23, 10, "V {0}".format(vars[ptr]))
                 stdscr.addstr(23, 20, "Y {0}".format(y))
@@ -347,25 +388,98 @@ def pymain(stdscr):
                     stdscr.addstr(23, 50, "T {0}".format(datastack[len(datastack) - 1]))
                 else:
                     stdscr.addstr(23, 50, "T ---")
+                stdscr.addstr(22, 70, "qQsStTuU".format(val))
+                compdata = ""
+                if (not CMP and vars[ptr] != acc) or (CMP and swap != acc):  # q
+                    compdata += "1"
+                else:
+                    compdata += "0"
+                if (not CMP and vars[ptr] == acc) or (CMP and swap == acc):  # Q
+                    compdata += "1"
+                else:
+                    compdata += "0"
+                if (not CMP and vars[ptr] <= acc) or (CMP and swap <= acc):  # s
+                    compdata += "1"
+                else:
+                    compdata += "0"
+                if (not CMP and vars[ptr] > acc) or (CMP and swap > acc):    # S
+                    compdata += "1"
+                else:
+                    compdata += "0"
+                if (not CMP and vars[ptr] >= acc) or (CMP and swap >= acc):  # t
+                    compdata += "1"
+                else:
+                    compdata += "0"
+                if (not CMP and vars[ptr] < acc) or (CMP and swap < acc):    # T
+                    compdata += "1"
+                else:
+                    compdata += "0"
+                if 0 != acc:                                                 # u
+                    compdata += "1"
+                else:
+                    compdata += "0"
+                if 0 == acc:                                                 # U
+                    compdata += "1"
+                else:
+                    compdata += "0"
+                stdscr.addstr(23, 70, compdata)
 
                 if debug == 1:
                     stdscr.nodelay(0)
-                    stdscr.getch()
+                    goodinp = False
+                    while not goodinp:
+                        stdscr.addstr(21, 0, "                                                                               ")
+                        stdscr.addstr(21, 0, "s step, c continue, l slow, v veryslow, b breakpoint here ({0})  {1}".format(bp, dbgkey))
+                        key = stdscr.getkey()
+                        dbgkey = key
+                        if key == 'b' or key == 'B':
+                            bp = pos
+                        if key == 'c' or key == 'C':
+                            goodinp = True
+                            debug = 0
+                        if key == 's' or key == 'S':
+                            goodinp = True
+                            debug = 1
+                        if key == 'l' or key == 'L':
+                            goodinp = True
+                            debug = 2
+                        if key == 'v' or key == 'V':
+                            goodinp = True
+                            debug = 3
                     stdscr.nodelay(1)
                     time.sleep(0.3)
                 elif debug == 2:
                     time.sleep(0.1)
                 elif debug == 3:
                     time.sleep(1)
-    except:
-        curses.nocbreak()
-        curses.echo()
+    except Exception as e:
+        stdscr.addstr(0, 0, "Fatal error at pos {0} (char {1}, instruction {2})".format(pos, pos+1, inp[pos]))
+        stdscr.addstr(1, 0, "Error type: {0}".format(type(e)))
+        stdscr.addstr(2, 0, "ACC = {0}".format(acc))
+        stdscr.addstr(3, 0, "PTR = {0}".format(ptr))
+        stdscr.addstr(4, 0, "MEM = {0}".format(vars[ptr]))
+        stdscr.addstr(5, 0, "SWP = {0}".format(swap))
+        stdscr.addstr(6, 0, "X = {0}".format(x))
+        stdscr.addstr(7, 0, "Y = {0}".format(y))
+        stdscr.addstr(8, 0, "LASTIN = {0}".format(lastread))
+        stdscr.addstr(9, 0, "STACKLEN = {0}".format(len(datastack)))
+        stackall = ""
+        while len(datastack):
+            stackall += str(datastack.pop())
+            stackall += " "
+        stdscr.addstr(10, 0, "STACK: {0}".format(stackall))
+        stdscr.addstr(11, 0, "DEBUG: {0}".format(debugstack))
+
+        stdscr.nodelay(0)
+        stdscr.getch()
+
         print("Error occurred: ", sys.exc_info()[0], file=sys.stderr)
         print("Accumulator: ", acc, file=sys.stderr)
         print("X: ", x, file=sys.stderr)
         print("Y: ", y, file=sys.stderr)
         print("Pointer: ", ptr, file=sys.stderr)
         print("Memory current: ", vars[ptr], file=sys.stderr)
+
         raise
 
 curses.wrapper(pymain)

@@ -56,7 +56,7 @@ RMMMMMMMMMMn
 # mines address sandbox+2
 RMn
 # last mine set sandbox+3
-RMpn
+RMln
 # success flag sandbox+4
 Rn
 # set iteration counter to 0
@@ -76,7 +76,7 @@ nZ
 # save the mine field to stack and load ptr to accumulator
 >;<
 # set comparison mode to swap do not set success flag if not all mines have been compared
-|\[Tb;rnnZnnnnRm,db]Tb|
+|\[tb;rnnZnnnnRm,db]tb|
 # reload mine field from stack, break if mine equals generated number
 <qb
 # go to next mine, restart loop
@@ -91,10 +91,10 @@ rnnZnnnZn<z
 rnnZnnnmnR
 # increment loop counter, check stuff, break if at limit
 rnnZ<ITb]
-# set sandbox,0 to 100
+# set sandbox,0 to 120
 rnnZR MMMMM MMMMM
 # create code for 'x', save to swap, jump to screen state area
-ra>&RMMMmmm+w<znZ
+ra>&MMmmm+w<znZ
 # set up for loop: counter to accumulator
 Ra
 # loop: fill mem with 'x'
