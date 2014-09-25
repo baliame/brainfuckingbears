@@ -26,7 +26,7 @@ def pymain(stdscr):
     global bp
     dbgkey = 0
     rand = random.Random()
-    rand.seed()
+    rand.seed(time.time())
     curses.curs_set(0)
     stdscr.nodelay(1)
 
