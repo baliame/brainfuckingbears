@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 __author__ = 'Ákos Tóth'
 
 import curses
