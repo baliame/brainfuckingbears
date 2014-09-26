@@ -166,8 +166,10 @@ def pymain(stdscr):
                 vars[ptr] = ord('a')
             elif currchar == 'x':
                 x = vars[ptr]
+                #stdscr.move(y, x)
             elif currchar == 'y':
                 y = vars[ptr]
+                #stdscr.move(y, x)
             elif currchar == 'X':
                 x = acc
             elif currchar == 'Y':
@@ -194,7 +196,7 @@ def pymain(stdscr):
                 acc = stdscr.getch()
                 lastread = acc
             elif currchar == '.':
-                stdscr.addch(x, y, chr(acc))
+                stdscr.addstr(y, x, chr(acc))
             elif currchar == 'Z':
                 ptr = vars[ptr]
             elif currchar == 'z':
