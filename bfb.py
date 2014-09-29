@@ -5,7 +5,7 @@ import curses
 import sys
 import time
 import random
-import math
+import binhex
 
 controlnames = [
 "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL",
@@ -52,6 +52,7 @@ def pymain(stdscr):
     global debug
     global bp
     global track
+    curses.use_default_colors()
     evlog = []
     def eventlog():
         scrstate = ['']*24
@@ -206,6 +207,8 @@ def pymain(stdscr):
     # D decrease accumulator
     # e push accumulator onto DEBUG STACK
     # E clear DEBUG STACK
+    # f push flags onto stack
+    # F pop flags from stack
     # i interrupt (exit) with exit code in accumulator
     # I increase accumulator
     # l decrease *ptr by 1
@@ -398,7 +401,11 @@ def pymain(stdscr):
                         rd = chr(acc)
                     log("accumulator set to {0} ({1}) from input".format(acc, rd))
             elif currchar == '.':
-                stdscr.addstr(y, x, chr(acc))
+                stdscr.addstr(y, x, chr(acc % 256))
+                if acc > 255:
+                    stdscr.chgat(y, x, 1, curses.A_UNDERLINE)
+                    if acc > 511:
+                        stdscr.chgat(y, x, 1, curses.A_BOLD)
                 if track:
                     log("output {0} ({1}) from accumulator".format(acc, chr(acc)))
             elif currchar == 'Z':
@@ -657,6 +664,25 @@ def pymain(stdscr):
                     occurred = 1
                 if track:
                     log("comparison - NOT flag {0} (acc={1}), result: {2}".format(fid, acc, occurred))
+            elif currchar == 'f':
+                flagint = 0
+                for i in range(10):
+                    flagint += (2 ** (9-i)) * flags[i]
+                stack.append(flagint)
+                if track:
+                    log("stacked {0} from flags".format(flagint))
+            elif currchar == 'F':
+                if len(datastack) != 0:
+                    flagint = datastack.pop()
+                    for i in range(10):
+                        if flagint & (2 ** (9-i)):
+                            flags[i] = 1
+                        else:
+                            flags[i] = 0
+                    if track:
+                        log("destacked {0} to flags".format(flagint))
+                else:
+                    raise IndexError('Stack is empty.')
             pos += 1
             stdscr.refresh()
             if pos == bp and bp >= 0:
@@ -686,6 +712,8 @@ def pymain(stdscr):
                 for i in range(10):
                     flagstr += str(flags[i]) + ' '
                 stdscr.addstr(21, 0, "FLAGS: {0}".format(flagstr))
+                colorchar = 7 + (acc % 10) * 2
+                stdscr.chgat(21, colorchar, 1, curses.A_BLINK)
                 stdscr.addstr(22, 0, "A {0}".format(acc))
                 stdscr.addstr(22, 10, "L {0}".format(lastread))
                 stdscr.addstr(22, 20, "X {0}".format(x))
