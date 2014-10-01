@@ -15,6 +15,18 @@ controlnames = [
 "SP"
 ]
 
+valid_chars = [
+'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E',
+'f', 'F', 'i', 'I', 'l', 'L', 'm', 'M', 'n', 'N',
+'p', 'P', 'q', 'Q', 'r', 'R', 's', 'S', 't', 'T',
+'u', 'U', 'v', 'V', 'w', 'W', 'x', 'X', 'y', 'Y',
+'z', 'Z', '&', '+', '-', '*', '/', '%', '?', '.',
+'{', '^', '}', '$', '\'', '"', '=', '~', '[', ']',
+'>', '<', ')', '(', ';', ',', '@', '#', '!', '\\',
+'|', ':'
+]
+
 if len(sys.argv) < 2:
     print('Usage: ' + sys.argv[0] + ' <code file> [debug|slow|veryslow] [track] [breakpoint line number]')
     exit(1)
@@ -283,6 +295,12 @@ def pymain(stdscr):
         print("Cannot open file " + sys.argv[1] + ".")
         exit(2)
     pos = 0
+    
+    inpl = list(inp)
+    for ch in inpl:
+        if not ch in valid_chars:
+            inpl.remove(ch)
+    inp = "".join(inpl)
 
     vars = [0] * 4096
     ptr = 0
